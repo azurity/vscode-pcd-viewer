@@ -11,6 +11,11 @@
     "name": "azurity",
     "email": "784227504@qq.com"
   },
+  "homepage": "https://github.com/azurity/vscode-pcd-viewer#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/azurity/vscode-pcd-viewer.git"
+  },
   "categories": [
     "Other"
   ],
