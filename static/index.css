@@ -1,0 +1,100 @@
+html,
+body {
+    margin: 0;
+    border: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+canvas {
+    z-index: 0;
+}
+
+#colormap-list {
+    position: fixed;
+    left: 16px;
+    bottom: 58px;
+}
+
+#colormap-list>div {
+    background-color: rgba(255, 255, 255, 0.3);
+    position: relative;
+    width: calc(256px + 32px);
+    height: calc(10px + 32px);
+    z-index: 1;
+}
+
+#colormap-list>div:hover {
+    background-color: rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+}
+
+#colormap-list>div>img {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    width: 256px;
+    height: 10px;
+}
+
+#colormap-current {
+    position: fixed;
+    left: 16px;
+    bottom: 16px;
+    width: calc(256px + 32px);
+    height: calc(10px + 32px);
+    z-index: 1;
+}
+
+#colormap-current:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+}
+
+#colormap {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    width: 256px;
+    height: 10px;
+    z-index: 1;
+}
+
+#color-fields {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 1;
+}
+
+#color-fields>div {
+    margin: 4px;
+    background-color: rgba(255, 255, 255, 0.3);
+    width: 48px;
+    height: 48px;
+    color: white;
+    font-size: 24px;
+    user-select: none;
+    display: flex;
+    position: relative;
+    justify-content: center;
+    align-items: center;
+}
+
+#color-fields>div:hover,
+#color-fields>div.current {
+    background-color: rgba(255, 255, 255, 0.6);
+    color: black;
+    cursor: pointer;
+}
+
+#color-fields>div>.key {
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-size: 12px;
+    width: 16px;
+    height: 16px;
+    text-align: center;
+    opacity: 0.6;
+}
