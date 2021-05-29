@@ -14,6 +14,7 @@ const typeTrans = { 'F': Float32Array, 'U': Uint32Array, 'I': Int32Array };
 let geometry = new THREE.BufferGeometry();
 let material = new THREE.PointsMaterial({ size: pointSize, vertexColors: true });
 let pointcloud = new THREE.Points(geometry, material);
+pointcloud.frustumCulled = false;
 pointcloud.quaternion.copy(
     new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2)
         .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI)));
