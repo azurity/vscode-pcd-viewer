@@ -89,8 +89,12 @@ function generateCloudColorByField(cloud, colorField) {
     for (let i = 0; i < size; i++) {
         values.push(cloud.points[i][colorField]);
     }
-    let max = Math.max(...values);
-    let min = Math.min(...values);
+    let max = -Infinity;
+    let min = Infinity;
+    for (let i of values) {
+        if (max < i) max = i;
+        if (min > i) min = i;
+    }
     let colors = new Float32Array(size * 3);
     for (let i = 0; i < size; i++) {
         let index = Math.floor((values[i] - min) / (max - min) * 255);
