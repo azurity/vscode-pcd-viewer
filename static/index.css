@@ -10,6 +10,36 @@ canvas {
     z-index: 0;
 }
 
+#orbit-list {
+    z-index: 1;
+    display: flex;
+    flex-direction: row;
+    position: fixed;
+    right: 16px;
+    top: 16px;
+}
+
+#orbit-list>div {
+    margin: 4px;
+    background-color: rgba(255, 255, 255, 0.3);
+    width: 32px;
+    height:32px;
+    color: white;
+    font-size: 16px;
+    user-select: none;
+    display: flex;
+    position: relative;
+    justify-content: center;
+    align-items: center;
+}
+
+#orbit-list>div:hover,
+#orbit-list>div.current {
+    background-color: rgba(255, 255, 255, 0.6);
+    color: black;
+    cursor: pointer;
+}
+
 #colormap-list {
     position: fixed;
     left: 16px;
@@ -73,7 +103,7 @@ canvas {
     width: 48px;
     height: 48px;
     color: white;
-    font-size: 24px;
+    font-size: 16px;
     user-select: none;
     display: flex;
     position: relative;

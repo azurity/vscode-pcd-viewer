@@ -210,6 +210,7 @@ export class PcdEditorProvider implements vscode.CustomEditorProvider {
             <body>
                 <script nonce="${nonce}" src="${threeJsUri}"></script>
                 <script nonce="${nonce}" src="${orbitControlsUri}"></script>
+                <div id="orbit-list"></div>
                 <div id="colormap-list" style="display: none;">
                     <div><img src="${colorscale_rainbowUri}"></div>
                     <div><img src="${colorscale_boneUri}"></div>
