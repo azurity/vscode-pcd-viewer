@@ -2,7 +2,7 @@
   "name": "pcd-viewer",
   "displayName": "pcd-viewer",
   "description": "an extension to preview pcd file in vscode.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "engines": {
     "vscode": "^1.56.0"
   },

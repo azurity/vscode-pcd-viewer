@@ -54,9 +54,9 @@ function generateCloudPosition(cloud) {
     let offset_y = -1;
     let offset_z = -1;
     for (let i = 0; i < cloud.header.fields.length; i++) {
-        if (cloud.header.fields[i] == 'x') offset_x = cloud.header.offset[i];
-        if (cloud.header.fields[i] == 'y') offset_y = cloud.header.offset[i];
-        if (cloud.header.fields[i] == 'z') offset_z = cloud.header.offset[i];
+        if (cloud.header.fields[i] == 'x') offset_x = i;
+        if (cloud.header.fields[i] == 'y') offset_y = i;
+        if (cloud.header.fields[i] == 'z') offset_z = i;
     }
     let vertices = new Float32Array(size * 3);
     for (let i = 0; i < size; i++) {
@@ -86,9 +86,8 @@ function generateCloudColorByField(cloud, colorField) {
     let values = [];
     if (colorField < 0) colorField = 0;
     if (colorField >= cloud.header.fields.length) colorField = cloud.header.fields.length - 1;
-    let offset = cloud.header.offset[colorField];
     for (let i = 0; i < size; i++) {
-        values.push(cloud.points[i][offset]);
+        values.push(cloud.points[i][colorField]);
     }
     let max = Math.max(...values);
     let min = Math.min(...values);
@@ -162,7 +161,7 @@ animate();
 window.addEventListener('message', async e => {
     const { type, body } = e.data;
     if (body.value == null) return;
-    cloud = parse(new Uint8Array(body.value.data));
+    cloud = parse(new Uint8Array(body.value.data).buffer);
     geometry.setAttribute('position', generateCloudPosition(cloud));
     geometry.setAttribute('color', generateCloudColorByConstant(cloud, [255, 255, 255]));
     let content = document.getElementById('color-fields');
@@ -186,32 +185,3 @@ window.addEventListener('message', async e => {
 
 const vscode = acquireVsCodeApi();
 vscode.postMessage({ type: 'ready' });
-
-// async function loadPCD(filename) {
-//     let res = await fetch(filename);
-//     let pcd = await res.arrayBuffer();
-//     return parse(pcd);
-// }
-
-// loadPCD('/63.pcd').then((data) => {
-//     cloud = data;
-//     geometry.setAttribute('position', generateCloudPosition(cloud));
-//     geometry.setAttribute('color', generateCloudColorByConstant(cloud, [255, 255, 255]));
-//     let content = document.getElementById('color-fields');
-//     content.innerHTML = ''
-//     for (let i = 0; i < cloud.header.fields.length; i++) {
-//         let item = document.createElement('div');
-//         item.dataset.index = i;
-//         item.id = 'field-' + i;
-//         item.addEventListener('click', selectFieldColor);
-//         let key = document.createElement('div');
-//         key.className = 'key'
-//         key.innerText = (i + 1).toString();
-//         let name = document.createElement('div');
-//         name.innerText = cloud.header.fields[i][0].toUpperCase();
-//         item.appendChild(key);
-//         item.appendChild(name);
-//         content.appendChild(item);
-//     }
-//     render();
-// });
