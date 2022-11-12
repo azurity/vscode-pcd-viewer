@@ -25,7 +25,8 @@ class PcdDocument implements vscode.CustomDocument {
         if (uri.scheme === 'untitled') {
             return new Uint8Array();
         }
-        return vscode.workspace.fs.readFile(uri);
+        let data = await vscode.workspace.fs.readFile(uri);
+        return new Uint8Array((data as Buffer).buffer);
     }
 
 
@@ -210,6 +211,7 @@ export class PcdEditorProvider implements vscode.CustomEditorProvider {
             <body>
                 <script nonce="${nonce}" src="${threeJsUri}"></script>
                 <script nonce="${nonce}" src="${orbitControlsUri}"></script>
+                <div id="menu-list"></div>
                 <div id="orbit-list"></div>
                 <div id="colormap-list" style="display: none;">
                     <div><img src="${colorscale_rainbowUri}"></div>

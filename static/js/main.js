@@ -7,18 +7,23 @@ const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-const pointSize = 0.01;
+let pointSizeLevel = 0;
+let sizeAttenuation = true;
+function pointSize() {
+    return Math.pow(1.2, pointSizeLevel) * (sizeAttenuation ? 0.01 : 1);
+}
 
 const typeTrans = { 'F': Float32Array, 'U': Uint32Array, 'I': Int32Array };
 
 let geometry = new THREE.BufferGeometry();
-let material = new THREE.PointsMaterial({ size: pointSize, vertexColors: true });
+let material = new THREE.PointsMaterial({ size: pointSize(), vertexColors: true, sizeAttenuation: sizeAttenuation });
 let pointcloud = new THREE.Points(geometry, material);
 pointcloud.frustumCulled = false;
 pointcloud.quaternion.copy(
     new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2)
         .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI)));
 scene.add(pointcloud);
+let cloudCenter = new THREE.Vector3();
 
 camera.position.y = 5;
 
@@ -47,6 +52,32 @@ window.addEventListener('resize', () => {
     render();
 });
 
+function refreshSizeDisplay() {
+    let counter = document.getElementById('counter');
+    counter.innerText = pointSize().toPrecision(4) + (sizeAttenuation ? 'u' : 'px');
+}
+
+function pointSizeAdd() {
+    pointSizeLevel += 1;
+    material.size = pointSize();
+    refreshSizeDisplay();
+    render();
+}
+
+function pointSizeSub() {
+    pointSizeLevel -= 1;
+    material.size = pointSize();
+    refreshSizeDisplay();
+    render();
+}
+
+function addTooltip(element, desc, position) {
+    let tooltip = document.createElement('div');
+    tooltip.innerText = desc;
+    tooltip.className = `tooltip ${position}`;
+    element.appendChild(tooltip);
+}
+
 let cloud = null;
 let colorField = -1;
 
@@ -62,12 +93,21 @@ function generateCloudPosition(cloud) {
         if (cloud.header.fields[i] == 'z') offset_z = i;
     }
     let vertices = new Float32Array(size * 3);
+    let sum_x = 0;
+    let sum_y = 0;
+    let sum_z = 0;
     for (let i = 0; i < size; i++) {
         let point = cloud.points[i];
         if (offset_x >= 0) vertices[i * 3 + 0] = point[offset_x];
         if (offset_y >= 0) vertices[i * 3 + 1] = point[offset_y];
         if (offset_z >= 0) vertices[i * 3 + 2] = point[offset_z];
+        sum_x += vertices[i * 3 + 0];
+        sum_y += vertices[i * 3 + 1];
+        sum_z += vertices[i * 3 + 2];
     }
+    cloudCenter.x = - sum_x / size;
+    cloudCenter.y = sum_z / size;
+    cloudCenter.z = sum_y / size;
     return new THREE.BufferAttribute(vertices, 3);
 }
 
@@ -186,6 +226,12 @@ window.addEventListener('keypress', (event) => {
             document.getElementById('color-fields').children[key].className = 'current';
         }
     }
+    if (event.key == '+' || event.key == '=') {
+        pointSizeAdd();
+    }
+    if (event.key == '-') {
+        pointSizeSub();
+    }
     if (event.key == '`') {
         geometry.setAttribute('color', generateCloudColorByConstant(cloud, [255, 255, 255]));
         render();
@@ -227,13 +273,24 @@ const orbitList = {
     }
 }
 
+let centerMode = false;
+
 let orbitContent = document.getElementById('orbit-list');
+let orbitAxis = 'Z+';
 for (let i in orbitList) {
     let item = document.createElement('div');
     item.innerText = i;
     item.addEventListener('click', (event) => {
+        orbitAxis = event.currentTarget.innerText;
         pointcloud.quaternion.copy(orbitList[event.currentTarget.innerText].quaternion);
-        camera.position.copy(orbitList[event.currentTarget.innerText].position);
+        let target = centerMode ? cloudCenter : new THREE.Vector3();
+        let position = orbitList[event.currentTarget.innerText].position.clone().add(target);
+        // controls.target0.copy(target);
+        // controls.target.copy(target);
+        controls.position0.copy(position);
+        // camera.position.copy(position);
+        // controls.update();
+        controls.reset();
         document.querySelectorAll('#orbit-list>div').forEach((node) => { node.className = ''; });
         item.className = 'current';
     });
@@ -241,13 +298,96 @@ for (let i in orbitList) {
 }
 orbitContent.children[4].className = 'current';
 
+let menuContent = document.getElementById('menu-list');
+{
+    let zero = document.createElement('div');
+    let center = document.createElement('div');
+
+    zero.innerText = 'O';
+    zero.addEventListener('click', (event) => {
+        centerMode = false;
+        let target = new THREE.Vector3();
+        let position = camera.position.clone().sub(controls.target);
+        controls.target0.copy(target);
+        controls.target.copy(target);
+        controls.position0.copy(orbitList[orbitAxis].position);
+        camera.position.copy(position);
+        controls.update();
+        render();
+        zero.className = 'current';
+        center.className = '';
+    });
+    addTooltip(zero, 'use coordinate origin as center', 'bottom');
+    menuContent.appendChild(zero);
+
+    center.innerText = 'C';
+    center.addEventListener('click', (event) => {
+        centerMode = true;
+        let target = cloudCenter;
+        let position = camera.position.clone().sub(controls.target).add(cloudCenter);
+        controls.target0.copy(target);
+        controls.target.copy(target);
+        controls.position0.copy(orbitList[orbitAxis].position.clone().add(center));
+        camera.position.copy(position);
+        controls.update();
+        render();
+        zero.className = '';
+        center.className = 'current';
+    });
+    addTooltip(center, 'use the center of the point cloud', 'bottom');
+    menuContent.appendChild(center);
+
+    zero.className = 'current';
+}
+
+{
+    let blank = document.createElement('div');
+    blank.className = 'blank';
+    menuContent.appendChild(blank);
+
+    let label = document.createElement('p');
+    label.innerText = 'point style';
+    menuContent.appendChild(label);
+
+    let add = document.createElement('div');
+    add.innerText = '+';
+    add.addEventListener('click', (event) => { pointSizeAdd(); });
+    menuContent.appendChild(add);
+
+    let counter = document.createElement('p');
+    counter.id = 'counter';
+    counter.className = 'counter';
+    counter.innerText = '0.01000u';
+    menuContent.appendChild(counter);
+
+    let sub = document.createElement('div');
+    sub.innerText = '-';
+    sub.addEventListener('click', (event) => { pointSizeSub(); });
+    menuContent.appendChild(sub);
+
+    let toggle = document.createElement('div');
+    toggle.innerText = 'Perspective Size';
+    toggle.className = 'text';
+    toggle.style.width = 'unset';
+    toggle.addEventListener('click', (event) => {
+        sizeAttenuation = !sizeAttenuation;
+        material.sizeAttenuation = sizeAttenuation;
+        material.size = pointSize();
+        material.needsUpdate = true;
+        toggle.innerText = material.sizeAttenuation ? 'Perspective Size' : 'Fixed Size';
+        refreshSizeDisplay();
+        render();
+    });
+    menuContent.appendChild(toggle);
+}
+
 render();
 animate();
 
 window.addEventListener('message', async e => {
     const { type, body } = e.data;
     if (body.value == null) return;
-    cloud = parse(new Uint8Array(body.value.data).buffer);
+    cloud = parse(body.value.buffer);
     geometry.setAttribute('position', generateCloudPosition(cloud));
     geometry.setAttribute('color', generateCloudColorByConstant(cloud, [255, 255, 255]));
     let content = document.getElementById('color-fields');
@@ -272,6 +412,7 @@ window.addEventListener('message', async e => {
         content.appendChild(item);
     }
     render();
+    window.focus();
 });
 
 const vscode = acquireVsCodeApi();

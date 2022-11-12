@@ -10,6 +10,15 @@ canvas {
     z-index: 0;
 }
 
+#menu-list {
+    z-index: 1;
+    display: flex;
+    flex-direction: row;
+    position: fixed;
+    left: 16px;
+    top: 16px;
+}
+
 #orbit-list {
     z-index: 1;
     display: flex;
@@ -19,6 +28,33 @@ canvas {
     top: 16px;
 }
 
+#menu-list>p {
+    margin: 4px;
+    height:32px;
+    color: white;
+    font-size: 16px;
+    user-select: none;
+    display: flex;
+    position: relative;
+    justify-content: center;
+    align-items: center;
+}
+
+#menu-list>p.counter {
+    background-color: rgba(255, 255, 255, 0.3);
+    margin: 4px -4px;
+    padding: 0 4px;
+}
+
+#menu-list>div.blank {
+    opacity: 0;
+}
+
+#menu-list>div.text {
+    padding: 0 8px;
+}
+
+#menu-list>div,
 #orbit-list>div {
     margin: 4px;
     background-color: rgba(255, 255, 255, 0.3);
@@ -33,6 +69,8 @@ canvas {
     align-items: center;
 }
 
+#menu-list>div:hover,
+#menu-list>div.current,
 #orbit-list>div:hover,
 #orbit-list>div.current {
     background-color: rgba(255, 255, 255, 0.6);
@@ -127,4 +165,33 @@ canvas {
     height: 16px;
     text-align: center;
     opacity: 0.6;
+}
+
+.tooltip {
+    display: none;
+    position: absolute;
+    padding: 4px;
+    border-radius: 4px;
+    background-color: rgba(255, 255, 255, 0.3);
+    color: white;
+    white-space: nowrap;
+}
+
+*:hover>.tooltip {
+    display: block;
+}
+
+.tooltip.bottom {
+    top: calc(100% + 6px);
+    left: 0;
+}
+
+.tooltip.bottom::before {
+    content: '';
+    position: absolute;
+    top: -4px;
+    left: 16px;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-bottom: 4px solid rgba(255, 255, 255, 0.3);
 }
