@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import Color from 'colorjs.io';
 
 function getNonce() {
     let text = '';
@@ -93,7 +94,22 @@ export class PcdEditorProvider implements vscode.CustomEditorProvider {
 
     constructor(
         private readonly _context: vscode.ExtensionContext
-    ) { }
+    ) {
+        _context.subscriptions.push(
+            vscode.workspace.onDidChangeConfiguration((e: vscode.ConfigurationChangeEvent) => {
+                if (!e.affectsConfiguration('pcdViewer.backgroundColor')) {
+                    return;
+                }
+                const color = new Color(vscode.workspace.getConfiguration('pcdViewer').get('backgroundColor', '#000') as string);
+                const front = (color.lch.l > 50) ? [0, 0, 0] : [255, 255, 255];
+                this.webviews.forEach((webviewPanel) => {
+                    this.postMessage(webviewPanel, 'background', {
+                        value: [[color.r, color.g, color.b], front]
+                    });
+                });
+            })
+        );
+    }
 
     private readonly _onDidChangeCustomDocument = new vscode.EventEmitter<vscode.CustomDocumentEditEvent<PcdDocument>>();
     public readonly onDidChangeCustomDocument = this._onDidChangeCustomDocument.event;
@@ -135,6 +151,11 @@ export class PcdEditorProvider implements vscode.CustomEditorProvider {
         // Wait for the webview to be properly ready before we init
         webviewPanel.webview.onDidReceiveMessage(e => {
             if (e.type === 'ready') {
+                const color = new Color(vscode.workspace.getConfiguration('pcdViewer').get('backgroundColor', '#000') as string);
+                const front = (color.lch.l > 50) ? [0, 0, 0] : [255, 255, 255];
+                this.postMessage(webviewPanel, 'background', {
+                    value: [[color.r, color.g, color.b], front]
+                });
                 this.postMessage(webviewPanel, 'init', {
                     value: document.documentData
                 });
@@ -260,5 +281,11 @@ class WebviewCollection {
         webviewPanel.onDidDispose(() => {
             this._webviews.delete(entry);
         });
+    }
+
+    public forEach(fn: (webviewPanel: vscode.WebviewPanel) => void) {
+        for (let it of this._webviews) {
+            fn(it.webviewPanel);
+        }
     }
 }

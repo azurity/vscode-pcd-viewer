@@ -4,6 +4,14 @@ All notable changes to the "pcd-viewer" extension will be documented in this fil
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.0.6] - 2025-08-24
+
+### Added
+
+- Added a configuration for specifying the background color.
+- The default color of the point cloud is automatically selected based on the background color.
+- Added a button to quickly reverse the background color.
+
 ## [0.0.5] - 2022-11-12
 
 ### Added

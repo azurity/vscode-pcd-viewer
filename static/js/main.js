@@ -2,6 +2,9 @@ import { parse } from "./pcd-format/pcd-format.js"
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 200000);
+let background = [0, 0, 0];
+let defaultColor = [255, 255, 255];
+let useDefault = true;
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -186,6 +189,7 @@ function generateCloudColorByRGBA(cloud, colorField) {
 }
 
 function selectFieldColor(event) {
+    useDefault = false;
     colorField = parseInt(event.currentTarget.dataset.index);
     geometry.setAttribute('color', generateCloudColorByField(cloud, colorField));
     render();
@@ -217,6 +221,7 @@ for (let node of document.getElementById('colormap-list').children) {
 
 window.addEventListener('keypress', (event) => {
     if (event.key.charCodeAt(0) >= '0'.charCodeAt(0) && event.key.charCodeAt(0) <= '9'.charCodeAt(0)) {
+        useDefault = false;
         let key = (parseInt(event.key) + 9) % 10
         if (key < cloud.header.fields.length) {
             colorField = key;
@@ -233,7 +238,8 @@ window.addEventListener('keypress', (event) => {
         pointSizeSub();
     }
     if (event.key == '`') {
-        geometry.setAttribute('color', generateCloudColorByConstant(cloud, [255, 255, 255]));
+        useDefault = true;
+        geometry.setAttribute('color', generateCloudColorByConstant(cloud, defaultColor));
         render();
         document.querySelectorAll('#color-fields>div').forEach((node) => { node.className = ''; });
     }
@@ -340,6 +346,8 @@ let menuContent = document.getElementById('menu-list');
     zero.className = 'current';
 }
 
+let reverseColor = false;
+
 {
     let blank = document.createElement('div');
     blank.className = 'blank';
@@ -379,6 +387,33 @@ let menuContent = document.getElementById('menu-list');
         render();
     });
     menuContent.appendChild(toggle);
+
+    let reverse = document.createElement('div');
+    reverse.innerText = 'Reverse Background';
+    reverse.className = 'text';
+    reverse.style.width = 'unset';
+    reverse.addEventListener('click', (event) => {
+        reverseColor = !reverseColor;
+        reverse.className = reverseColor ? 'text current': 'text';
+        updateBackground();
+    });
+    menuContent.appendChild(reverse);
+}
+
+function updateBackground() {
+    let back = [...background];
+    let front = [...defaultColor];
+    if (reverseColor) {
+        back = back.map(it => 1-it);
+        front = front.map(it => 255-it);
+    }
+    renderer.setClearColor(new THREE.Color().setRGB(back[0], back[1], back[2]));
+    document.body.style.setProperty('--color', `${front[0]}, ${front[1]}, ${front[2]}`);
+    document.body.style.setProperty('--highlight', `${255-front[0]}, ${255-front[1]}, ${255-front[2]}`);
+    if (useDefault && cloud !== null) {
+        geometry.setAttribute('color', generateCloudColorByConstant(cloud, front));
+        render();
+    }
 }
 
 render();
@@ -387,9 +422,17 @@ animate();
 window.addEventListener('message', async e => {
     const { type, body } = e.data;
     if (body.value == null) return;
+    if (type == 'background') {
+        background = body.value[0];
+        defaultColor = body.value[1];
+        updateBackground();
+    }
+    if (type != 'init') {
+        return;
+    }
     cloud = parse(body.value.buffer);
     geometry.setAttribute('position', generateCloudPosition(cloud));
-    geometry.setAttribute('color', generateCloudColorByConstant(cloud, [255, 255, 255]));
+    geometry.setAttribute('color', generateCloudColorByConstant(cloud, defaultColor));
     let content = document.getElementById('color-fields');
     content.innerHTML = '';
     for (let i = 0; i < cloud.header.fields.length; i++) {

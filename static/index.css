@@ -6,6 +6,11 @@ body {
     overflow: hidden;
 }
 
+body {
+    --color: 255, 255, 255;
+    --highlight: 0, 0, 0;
+}
+
 canvas {
     z-index: 0;
 }
@@ -31,7 +36,7 @@ canvas {
 #menu-list>p {
     margin: 4px;
     height:32px;
-    color: white;
+    color: rgb(var(--color));
     font-size: 16px;
     user-select: none;
     display: flex;
@@ -41,7 +46,7 @@ canvas {
 }
 
 #menu-list>p.counter {
-    background-color: rgba(255, 255, 255, 0.3);
+    background-color: rgba(var(--color), 0.3);
     margin: 4px -4px;
     padding: 0 4px;
 }
@@ -57,10 +62,10 @@ canvas {
 #menu-list>div,
 #orbit-list>div {
     margin: 4px;
-    background-color: rgba(255, 255, 255, 0.3);
+    background-color: rgba(var(--color), 0.3);
     width: 32px;
     height:32px;
-    color: white;
+    color: rgb(var(--color));
     font-size: 16px;
     user-select: none;
     display: flex;
@@ -73,8 +78,8 @@ canvas {
 #menu-list>div.current,
 #orbit-list>div:hover,
 #orbit-list>div.current {
-    background-color: rgba(255, 255, 255, 0.6);
-    color: black;
+    background-color: rgba(var(--color), 0.6);
+    color: rgb(var(--highlight));
     cursor: pointer;
 }
 
@@ -85,7 +90,7 @@ canvas {
 }
 
 #colormap-list>div {
-    background-color: rgba(255, 255, 255, 0.3);
+    background-color: rgba(var(--color), 0.3);
     position: relative;
     width: calc(256px + 32px);
     height: calc(10px + 32px);
@@ -93,7 +98,7 @@ canvas {
 }
 
 #colormap-list>div:hover {
-    background-color: rgba(255, 255, 255, 0.8);
+    background-color: rgba(var(--color), 0.8);
     cursor: pointer;
 }
 
@@ -115,7 +120,7 @@ canvas {
 }
 
 #colormap-current:hover {
-    background-color: rgba(255, 255, 255, 0.3);
+    background-color: rgba(var(--color), 0.3);
     cursor: pointer;
 }
 
@@ -137,10 +142,10 @@ canvas {
 
 #color-fields>div {
     margin: 4px;
-    background-color: rgba(255, 255, 255, 0.3);
+    background-color: rgba(var(--color), 0.3);
     width: 48px;
     height: 48px;
-    color: white;
+    color: rgb(var(--color));
     font-size: 16px;
     user-select: none;
     display: flex;
@@ -151,8 +156,8 @@ canvas {
 
 #color-fields>div:hover,
 #color-fields>div.current {
-    background-color: rgba(255, 255, 255, 0.6);
-    color: black;
+    background-color: rgba(var(--color), 0.6);
+    color: rgb(var(--highlight));
     cursor: pointer;
 }
 
@@ -172,8 +177,8 @@ canvas {
     position: absolute;
     padding: 4px;
     border-radius: 4px;
-    background-color: rgba(255, 255, 255, 0.3);
-    color: white;
+    background-color: rgba(var(--color), 0.3);
+    color: rgb(var(--color));
     white-space: nowrap;
 }
 
@@ -193,5 +198,5 @@ canvas {
     left: 16px;
     border-left: 4px solid transparent;
     border-right: 4px solid transparent;
-    border-bottom: 4px solid rgba(255, 255, 255, 0.3);
+    border-bottom: 4px solid rgba(var(--color), 0.3);
 }
