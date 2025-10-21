@@ -1,4 +1,4 @@
-import { parse } from "./pcd-format/pcd-format.js"
+import { parse } from "./pcd-format/pcd-format.js";
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 200000);
@@ -9,6 +9,19 @@ let useDefault = true;
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
+
+const raycaster = new THREE.Raycaster();
+raycaster.params.Points.threshold = 0.02;
+const mouse = new THREE.Vector2();
+
+const selectionPanel = document.getElementById('selection-panel');
+const selectionPanelHeader = selectionPanel.querySelector('.panel-header');
+const selectionPanelBody = selectionPanel.querySelector('.panel-body');
+
+let selectionMode = false;
+let selectedPointIndex = null;
+let selectionToggle = null;
+let pointerDownPosition = null;
 
 let pointSizeLevel = 0;
 let sizeAttenuation = true;
@@ -26,6 +39,14 @@ pointcloud.quaternion.copy(
     new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2)
         .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI)));
 scene.add(pointcloud);
+
+const selectedMarkerGeometry = new THREE.BufferGeometry();
+selectedMarkerGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(3), 3));
+const selectedMarkerMaterial = new THREE.PointsMaterial({ size: pointSize() * 6, color: 0xff3366, sizeAttenuation: sizeAttenuation });
+const selectedMarker = new THREE.Points(selectedMarkerGeometry, selectedMarkerMaterial);
+selectedMarker.visible = false;
+pointcloud.add(selectedMarker);
+
 let cloudCenter = new THREE.Vector3();
 
 camera.position.y = 5;
@@ -55,15 +76,31 @@ window.addEventListener('resize', () => {
     render();
 });
 
+renderer.domElement.addEventListener('click', handleCanvasClick);
+renderer.domElement.addEventListener('pointerdown', (event) => {
+    pointerDownPosition = { x: event.clientX, y: event.clientY };
+});
+renderer.domElement.addEventListener('pointerleave', () => {
+    pointerDownPosition = null;
+});
+
 function refreshSizeDisplay() {
     let counter = document.getElementById('counter');
     counter.innerText = pointSize().toPrecision(4) + (sizeAttenuation ? 'u' : 'px');
+}
+
+function updateSelectionMarkerSize() {
+    selectedMarkerMaterial.size = pointSize() * 6;
+    selectedMarkerMaterial.sizeAttenuation = sizeAttenuation;
+    selectedMarkerMaterial.needsUpdate = true;
+    raycaster.params.Points.threshold = Math.max(pointSize() * (sizeAttenuation ? 6 : 2), 0.02);
 }
 
 function pointSizeAdd() {
     pointSizeLevel += 1;
     material.size = pointSize();
     refreshSizeDisplay();
+    updateSelectionMarkerSize();
     render();
 }
 
@@ -71,6 +108,7 @@ function pointSizeSub() {
     pointSizeLevel -= 1;
     material.size = pointSize();
     refreshSizeDisplay();
+    updateSelectionMarkerSize();
     render();
 }
 
@@ -186,6 +224,117 @@ function generateCloudColorByRGBA(cloud, colorField) {
         colors[i * 4 + 3] = view[3] / 255.0;
     }
     return new THREE.BufferAttribute(colors, 4);
+}
+
+function formatScalar(value) {
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+        return `${value}`;
+    }
+    if (Number.isInteger(value)) {
+        return value.toString();
+    }
+    const abs = Math.abs(value);
+    if (abs !== 0 && (abs < 0.001 || abs >= 10000)) {
+        return value.toExponential(3);
+    }
+    return value.toFixed(4);
+}
+
+function refreshSelectionPanel() {
+    if (selectionPanelHeader) {
+        selectionPanelHeader.textContent = selectedPointIndex === null ? 'Selection' : `Selection (#${selectedPointIndex})`;
+    }
+    if (!selectionPanelBody) {
+        return;
+    }
+    if (selectedPointIndex === null || !cloud || !cloud.points || !cloud.points[selectedPointIndex]) {
+        selectionPanelBody.classList.add('empty');
+        selectionPanelBody.textContent = 'No point selected';
+        return;
+    }
+    selectionPanelBody.classList.remove('empty');
+    selectionPanelBody.textContent = '';
+    for (let i = 0; i < cloud.header.fields.length; i++) {
+        const row = document.createElement('div');
+        row.className = 'panel-row';
+        const field = document.createElement('div');
+        field.className = 'field';
+        field.textContent = cloud.header.fields[i];
+        const value = document.createElement('div');
+        value.className = 'value';
+        const raw = cloud.points[selectedPointIndex][i];
+        if (Array.isArray(raw)) {
+            value.textContent = raw.map(formatScalar).join(', ');
+        } else {
+            value.textContent = formatScalar(raw);
+        }
+        row.appendChild(field);
+        row.appendChild(value);
+        selectionPanelBody.appendChild(row);
+    }
+}
+
+function selectPoint(index) {
+    if (!cloud || !geometry.attributes.position) {
+        return;
+    }
+    if (!cloud.points || !cloud.points[index]) {
+        clearSelection();
+        return;
+    }
+    const positions = geometry.attributes.position;
+    selectedMarkerGeometry.attributes.position.setXYZ(0, positions.getX(index), positions.getY(index), positions.getZ(index));
+    selectedMarkerGeometry.attributes.position.needsUpdate = true;
+    selectedMarker.visible = true;
+    selectedPointIndex = index;
+    refreshSelectionPanel();
+    render();
+}
+
+function clearSelection() {
+    selectedPointIndex = null;
+    const wasVisible = selectedMarker.visible;
+    selectedMarker.visible = false;
+    refreshSelectionPanel();
+    if (wasVisible) {
+        render();
+    }
+}
+
+function toggleSelectionMode(enabled) {
+    selectionMode = enabled;
+    if (selectionToggle) {
+        selectionToggle.className = enabled ? 'text current' : 'text';
+    }
+    renderer.domElement.style.cursor = enabled ? 'crosshair' : '';
+    if (!enabled) {
+        clearSelection();
+    }
+}
+
+function handleCanvasClick(event) {
+    if (!selectionMode || !cloud) {
+        return;
+    }
+    if (pointerDownPosition) {
+        const dx = event.clientX - pointerDownPosition.x;
+        const dy = event.clientY - pointerDownPosition.y;
+        if (Math.hypot(dx, dy) > 5) {
+            pointerDownPosition = null;
+            return;
+        }
+    }
+    pointerDownPosition = null;
+    const rect = renderer.domElement.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    raycaster.setFromCamera(mouse, camera);
+    const intersections = raycaster.intersectObject(pointcloud, false);
+    if (intersections.length > 0 && typeof intersections[0].index === 'number') {
+        selectPoint(intersections[0].index);
+    } else {
+        clearSelection();
+    }
 }
 
 function selectFieldColor(event) {
@@ -343,6 +492,20 @@ let menuContent = document.getElementById('menu-list');
     addTooltip(center, 'use the center of the point cloud', 'bottom');
     menuContent.appendChild(center);
 
+    let selectionSpacer = document.createElement('div');
+    selectionSpacer.className = 'blank';
+    menuContent.appendChild(selectionSpacer);
+
+    selectionToggle = document.createElement('div');
+    selectionToggle.innerText = 'Select';
+    selectionToggle.className = 'text';
+    selectionToggle.style.width = 'unset';
+    selectionToggle.addEventListener('click', () => {
+        toggleSelectionMode(!selectionMode);
+    });
+    addTooltip(selectionToggle, 'toggle point selection mode', 'bottom');
+    menuContent.appendChild(selectionToggle);
+
     zero.className = 'current';
 }
 
@@ -384,6 +547,7 @@ let reverseColor = false;
         material.needsUpdate = true;
         toggle.innerText = material.sizeAttenuation ? 'Perspective Size' : 'Fixed Size';
         refreshSizeDisplay();
+        updateSelectionMarkerSize();
         render();
     });
     menuContent.appendChild(toggle);
@@ -394,7 +558,7 @@ let reverseColor = false;
     reverse.style.width = 'unset';
     reverse.addEventListener('click', (event) => {
         reverseColor = !reverseColor;
-        reverse.className = reverseColor ? 'text current': 'text';
+        reverse.className = reverseColor ? 'text current' : 'text';
         updateBackground();
     });
     menuContent.appendChild(reverse);
@@ -404,17 +568,20 @@ function updateBackground() {
     let back = [...background];
     let front = [...defaultColor];
     if (reverseColor) {
-        back = back.map(it => 1-it);
-        front = front.map(it => 255-it);
+        back = back.map(it => 1 - it);
+        front = front.map(it => 255 - it);
     }
     renderer.setClearColor(new THREE.Color().setRGB(back[0], back[1], back[2]));
     document.body.style.setProperty('--color', `${front[0]}, ${front[1]}, ${front[2]}`);
-    document.body.style.setProperty('--highlight', `${255-front[0]}, ${255-front[1]}, ${255-front[2]}`);
+    document.body.style.setProperty('--highlight', `${255 - front[0]}, ${255 - front[1]}, ${255 - front[2]}`);
     if (useDefault && cloud !== null) {
         geometry.setAttribute('color', generateCloudColorByConstant(cloud, front));
         render();
     }
 }
+
+refreshSelectionPanel();
+updateSelectionMarkerSize();
 
 render();
 animate();
@@ -431,6 +598,7 @@ window.addEventListener('message', async e => {
         return;
     }
     cloud = parse(body.value.buffer);
+    clearSelection();
     geometry.setAttribute('position', generateCloudPosition(cloud));
     geometry.setAttribute('color', generateCloudColorByConstant(cloud, defaultColor));
     let content = document.getElementById('color-fields');
