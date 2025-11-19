@@ -45,6 +45,7 @@ selectedMarkerGeometry.setAttribute('position', new THREE.BufferAttribute(new Fl
 const selectedMarkerMaterial = new THREE.PointsMaterial({ size: pointSize() * 6, color: 0xff3366, sizeAttenuation: sizeAttenuation });
 const selectedMarker = new THREE.Points(selectedMarkerGeometry, selectedMarkerMaterial);
 selectedMarker.visible = false;
+selectedMarker.frustumCulled = false;
 pointcloud.add(selectedMarker);
 
 let cloudCenter = new THREE.Vector3();
@@ -93,7 +94,7 @@ function updateSelectionMarkerSize() {
     selectedMarkerMaterial.size = pointSize() * 6;
     selectedMarkerMaterial.sizeAttenuation = sizeAttenuation;
     selectedMarkerMaterial.needsUpdate = true;
-    raycaster.params.Points.threshold = Math.max(pointSize() * (sizeAttenuation ? 6 : 2), 0.02);
+    raycaster.params.Points.threshold = Math.max(pointSize() * (sizeAttenuation ? 6 : 0.06), 0.02);
 }
 
 function pointSizeAdd() {
@@ -329,7 +330,7 @@ function handleCanvasClick(event) {
     mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
     raycaster.setFromCamera(mouse, camera);
-    const intersections = raycaster.intersectObject(pointcloud, false);
+    const intersections = raycaster.intersectObject(pointcloud, false).sort((a, b)=> a.distanceToRay - b.distanceToRay);
     if (intersections.length > 0 && typeof intersections[0].index === 'number') {
         selectPoint(intersections[0].index);
     } else {
