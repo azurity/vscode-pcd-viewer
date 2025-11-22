@@ -1,5 +1,5 @@
-import * as vscode from 'vscode';
 import Color from 'colorjs.io';
+import * as vscode from 'vscode';
 
 function getNonce() {
     let text = '';
@@ -246,6 +246,10 @@ export class PcdEditorProvider implements vscode.CustomEditorProvider {
                 </div>
                 <div id="colormap-current"><canvas id="colormap" width="256px" height="10px"></canvas></div>
                 <div id="color-fields"></div>
+                <div id="selection-panel">
+                    <div class="panel-header">Selection</div>
+                    <div class="panel-body empty">No point selected</div>
+                </div>
                 <script nonce="${nonce}" src="${scriptUri}" type="module"></script>
             </body>
             </html>`;
