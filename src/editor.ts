@@ -109,6 +109,19 @@ export class PcdEditorProvider implements vscode.CustomEditorProvider {
                 });
             })
         );
+        _context.subscriptions.push(vscode.commands.registerCommand("pcdViewer.toggleMenu", () => {
+            const active: any = vscode.window.tabGroups.activeTabGroup.activeTab?.input;
+            if (active && active.viewType == 'pcdViewer.pcdPreview') {
+                for (const webview of this.webviews.get(active.uri)) {
+                    if (!webview.active) {
+                        continue;
+                    }
+                    this.postMessage(webview, "action", {
+                        value: "toggle-menu"
+                    });
+                }
+            }
+        }));
     }
 
     private readonly _onDidChangeCustomDocument = new vscode.EventEmitter<vscode.CustomDocumentEditEvent<PcdDocument>>();

@@ -4,6 +4,12 @@ All notable changes to the "pcd-viewer" extension will be documented in this fil
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.0.8] - 2026-03-22
+
+## Added
+
+- Added editor action to toggle the display of all menu items.
+
 ## [0.0.7] - 2025-11-22
 
 ## Added
@@ -27,4 +33,4 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ### Changed
 
-- Changed vscode dependency to `^1.57.0` to pass data useing `TypedArray` without serialization.
+- Changed vscode dependency to `^1.57.0` to pass data using `TypedArray` without serialization.

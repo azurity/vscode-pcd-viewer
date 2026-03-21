@@ -15,6 +15,18 @@ canvas {
     z-index: 0;
 }
 
+body {
+    --menu-viz: 1.0;
+}
+
+#menu-list,
+#orbit-list,
+#color-fields,
+#colormap-current,
+#selection-panel {
+    opacity: var(--menu-viz);
+}
+
 #menu-list {
     z-index: 1;
     display: flex;

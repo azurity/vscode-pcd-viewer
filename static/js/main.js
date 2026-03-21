@@ -22,6 +22,7 @@ let selectionMode = false;
 let selectedPointIndex = null;
 let selectionToggle = null;
 let pointerDownPosition = null;
+let menuViz = true;
 
 let pointSizeLevel = 0;
 let sizeAttenuation = true;
@@ -581,6 +582,11 @@ function updateBackground() {
     }
 }
 
+function toggleMenuViz() {
+    menuViz = !menuViz;
+    document.body.style.setProperty('--menu-viz', menuViz ? '1.0' : '0.0');
+}
+
 refreshSelectionPanel();
 updateSelectionMarkerSize();
 
@@ -594,6 +600,9 @@ window.addEventListener('message', async e => {
         background = body.value[0];
         defaultColor = body.value[1];
         updateBackground();
+    }
+    if (type == 'action' && body.value == 'toggle-menu') {
+        toggleMenuViz();
     }
     if (type != 'init') {
         return;
